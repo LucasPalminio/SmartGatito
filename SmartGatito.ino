@@ -4,10 +4,7 @@ Adafruit_LiquidCrystal lcd_1(0);
 const int pingPin = A0; // Trigger Pin of Ultrasonic Sensor
 const int echoPin = A1; // Echo Pin of Ultrasonic Sensor
 const int pinOut = 6;
-const double r2 = 0.2809; //Radio del estanque en metros al cuadrado
-const double pi = 3.1415926535897932384626433832795;
-double v = 0;
-int modo = 1; // Variable para almacenar el modo actual
+byte modo = 1; // Variable para almacenar el modo actual
 
 void setup() {
    Serial.begin(9600); // Starting Serial Terminal
@@ -19,10 +16,10 @@ void setup() {
 
 void loop() {
   // Lectura del estado del botón
-  int estadoBoton = digitalRead(2);
+  byte estadoBoton = digitalRead(2);
 
   // Cambiar el modo al presionar el botón
-  if (estadoBoton == LOW) {
+  if (estadoBoton == HIGH) {
     modo++;
     if (modo > 3) modo = 1; // Se reinicia el ciclo
     Serial.println("Nuevo modo:");
@@ -35,6 +32,8 @@ void loop() {
     case 1:
       // Modo siempre encendido
       digitalWrite(pinOut, LOW); // Encender el LED
+      lcd_1.setCursor(0, 0);
+      lcd_1.print("Fuente Apagada         ");
       break;
     case 2:
       // Modo dependiendo de la medición del ultrasonido
@@ -51,11 +50,11 @@ void loop() {
       duration = pulseIn(echoPin, HIGH);
       cm = microsecondsToCentimeters(duration);
       if (cm < 30) {
-        lcd_1.setCursor(0, 1);
+        lcd_1.setCursor(0, 0);
         lcd_1.print("Gatito Cerca         ");
         digitalWrite(pinOut, HIGH); // Apagar Bomba
       } else {
-        lcd_1.setCursor(0, 1);
+        lcd_1.setCursor(0, 0);
         lcd_1.print("Gatito Lejos         ");
         digitalWrite(pinOut, LOW); // Prender Bomba
       }
@@ -64,6 +63,8 @@ void loop() {
     case 3:
       // Modo LED apagado
       digitalWrite(pinOut, HIGH); // Apagar el LED
+      lcd_1.setCursor(0, 0);
+      lcd_1.print("Fuente Encendida         ");
       break;
   }
 }
