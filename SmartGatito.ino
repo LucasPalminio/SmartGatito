@@ -69,10 +69,6 @@ void loop() {
   }
 }
 
-long microsecondsToInches(long microseconds) {
-   return microseconds / 74 / 2;
-}
-
 long microsecondsToCentimeters(long microseconds) {
    return microseconds / 29 / 2;
 }
