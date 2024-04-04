@@ -1,6 +1,3 @@
-//#include <Adafruit_LiquidCrystal.h>
-
-//Adafruit_LiquidCrystal lcd_1(0);
 const int pingPin = A0; // Trigger Pin of Ultrasonic Sensor
 const int echoPin = A1; // Echo Pin of Ultrasonic Sensor
 const int pinOut = 6;
@@ -9,8 +6,6 @@ const int button = 2;
 
 void setup() {
    Serial.begin(9600); // Starting Serial Terminal
-   //lcd_1.begin(16, 2);
-   //lcd_1.setBacklight(1);
    pinMode(6, OUTPUT);
    pinMode(button, INPUT); // Botón conectado al pin 2
 }
@@ -32,8 +27,7 @@ void loop() {
   switch (modo) {
     case 1:
       // Modo siempre encendido
-      digitalWrite(pinOut, LOW); // Encender el LED
-     
+      digitalWrite(pinOut, HIGH); // Encender la Bomba
      Serial.println("Fuente Apagada");
       
       break;
@@ -53,17 +47,17 @@ void loop() {
       if (cm < 30) {
         
         Serial.println("Gatito Cerca");
-        digitalWrite(pinOut, HIGH); // Apagar Bomba
+        digitalWrite(pinOut, LOW); // Apagar Bomba
       } else {
         
         Serial.println("Gatito Lejos");
-        digitalWrite(pinOut, LOW); // Prender Bomba
+        digitalWrite(pinOut, HIGH); // Prender Bomba
       }
       delay(100);
       break;
     case 3:
       // Modo LED apagado
-      digitalWrite(pinOut, HIGH); // Apagar el LED
+      digitalWrite(pinOut, LOW); // Apagar la Bomba
       
       Serial.println("Fuente Encendida");
       break;
