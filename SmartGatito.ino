@@ -6,6 +6,7 @@ const int button = 2;
 
 void setup() {
    Serial.begin(9600); // Starting Serial Terminal
+
    pinMode(6, OUTPUT);
    pinMode(button, INPUT); // Botón conectado al pin 2
 }
@@ -44,14 +45,14 @@ void loop() {
       pinMode(echoPin, INPUT);
       duration = pulseIn(echoPin, HIGH);
       cm = microsecondsToCentimeters(duration);
+      delay(3000);
       if (cm < 30) {
-        
         Serial.println("Gatito Cerca");
-        digitalWrite(pinOut, LOW); // Apagar Bomba
+        digitalWrite(pinOut, LOW); // Prender Bomba
+        delay(10000);
       } else {
-        
         Serial.println("Gatito Lejos");
-        digitalWrite(pinOut, HIGH); // Prender Bomba
+        digitalWrite(pinOut, HIGH); // Apagar Bomba
       }
       delay(100);
       break;
