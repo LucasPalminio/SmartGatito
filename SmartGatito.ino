@@ -1,13 +1,13 @@
 const int pingPin = A0; // Trigger Pin of Ultrasonic Sensor
 const int echoPin = A1; // Echo Pin of Ultrasonic Sensor
-const int pinOut = 6;
-byte modo = 1; // Variable para almacenar el modo actual
+const int pinRele = 7;
+byte modo = 2; // Variable para almacenar el modo actual
 const int button = 2;
 
 void setup() {
    Serial.begin(9600); // Starting Serial Terminal
 
-   pinMode(6, OUTPUT);
+   pinMode(pinRele, OUTPUT);
    pinMode(button, INPUT); // Botón conectado al pin 2
 }
 
@@ -19,7 +19,7 @@ void loop() {
   if (estadoBoton == HIGH) {
     modo++;
     if (modo > 3) modo = 1; // Se reinicia el ciclo
-    Serial.println("Nuevo modo:");
+    Serial.print("Nuevo modo:");
     Serial.println(modo);
     delay(500);
   }
@@ -28,9 +28,8 @@ void loop() {
   switch (modo) {
     case 1:
       // Modo siempre encendido
-      digitalWrite(pinOut, HIGH); // Encender la Bomba
-     Serial.println("Fuente Apagada");
-      
+      digitalWrite(pinRele, LOW); // Encender la Bomba
+      Serial.println("Fuente Encendida");
       break;
     case 2:
       // Modo dependiendo de la medición del ultrasonido
@@ -45,22 +44,21 @@ void loop() {
       pinMode(echoPin, INPUT);
       duration = pulseIn(echoPin, HIGH);
       cm = microsecondsToCentimeters(duration);
-      delay(3000);
+      //delay(3000);
       if (cm < 30) {
         Serial.println("Gatito Cerca");
-        digitalWrite(pinOut, LOW); // Prender Bomba
-        delay(10000);
+        digitalWrite(pinRele, LOW); // Encender Bomba
+        //delay(10000);
       } else {
         Serial.println("Gatito Lejos");
-        digitalWrite(pinOut, HIGH); // Apagar Bomba
+        digitalWrite(pinRele, HIGH); // Apagar Bomba
       }
       delay(100);
       break;
     case 3:
       // Modo LED apagado
-      digitalWrite(pinOut, LOW); // Apagar la Bomba
-      
-      Serial.println("Fuente Encendida");
+      digitalWrite(pinRele, HIGH); // Apagar la Bomba
+      Serial.println("Fuente Apagada");
       break;
   }
 }
