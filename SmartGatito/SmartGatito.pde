@@ -1,101 +1,94 @@
-import processing.serial.*;
-import gifAnimation.*;//https://github.com/extrapixel/gif-animation
+import processing.serial.*; // Importa la librería para comunicación serial
+import gifAnimation.*;     // Importa la librería para manipulación de GIFs
 
-Serial myPort;  // Create object from Serial class
-String val;     // Data received from the serial port
+Serial myPort;             // Objeto para comunicación serial
+String val;                // Variable para almacenar los datos recibidos desde el puerto serial
 
-Gif gatoFelizGif, gatoTristeGif, encedidoGif, apagadoGif;
+Gif gatoFelizGif, gatoTristeGif, encedidoGif, apagadoGif; // Variables para almacenar los GIFs
 
 void setup() {
-  String portName = Serial.list()[1];
-  myPort = new Serial(this, portName, 9600);
+  // Configuración inicial
+  String portName = Serial.list()[1];  // Selecciona el nombre del puerto serial
+  myPort = new Serial(this, portName, 9600); // Inicializa la comunicación serial
 
+  // Carga los GIFs desde archivos
   gatoFelizGif = new Gif(this, "resources/Chipi-chipi-chapa-chapa.gif"); 
   gatoTristeGif = new Gif(this, "resources/sad-cat.gif");
   encedidoGif = new Gif(this, "resources/cataratas.gif");
   apagadoGif = new Gif(this, "resources/desierto.gif");
   
+  // Reproduce los GIFs
   gatoFelizGif.play();
   gatoTristeGif.play();
   encedidoGif.play();
   apagadoGif.play();
   
+  // Configura el tamaño de la ventana
   size(400, 400);
 }
 
 void draw() {
+  // Verifica si hay datos disponibles en el puerto serial
   if (myPort.available() > 0 ) {
-    //println("PUERTO NO DISPONIBLE");      
-    val = myPort.readStringUntil('\n');         
-    println(val); 
+    val = myPort.readStringUntil('\n'); // Lee los datos del puerto serial hasta encontrar un salto de línea
+    println(val); // Muestra los datos recibidos en la consola
   }
 
-  
+  // Procesa los datos recibidos
   if (val != null) {
     val = val.trim(); // Elimina espacios en blanco al principio y al final del mensaje
     switch (val) {
       case "Fuente Encendida":
-        dibujarFuenteEncendida();
-        // Acciones cuando la fuente está encendida
+        dibujarFuenteEncendida(); // Dibuja el GIF correspondiente
         println("La fuente de agua para gatos está encendida.");
         break;
       case "Gatito Cerca":
         dibujarGatoFeliz();
-        // Acciones cuando el gato está cerca
         println("El gatito está cerca.");
         break;
       case "Gatito Lejos":
         dibujarGatoTriste();
-        // Acciones cuando el gato está lejos
         println("El gatito está lejos.");
         break;
       case "Fuente Apagada":
         dibujarFuenteApagada();
-        // Acciones cuando la fuente está apagada
         println("La fuente de agua para gatos está apagada.");
         break;
       default:
-        // Acciones por defecto si se recibe un mensaje no reconocido
-        println("Mensaje no reconocido: " + val);
+        println("Mensaje no reconocido: " + val); // Mensaje por defecto si el mensaje no es reconocido
         break;
     }
   }
 }
 
-// Método para dibujar un gato feliz bebiendo agua
+// Dibuja el GIF de un gato feliz
 void dibujarGatoFeliz() {
-  //background(180);
-  //gatoFelizGif.play();
   image(gatoFelizGif, 0, 0, width, height);
   mostrarMensaje("El gatito está bebiendo agua.");
-//image(gato_feliz, 0, 0, width, height);  
-
 }
 
+// Dibuja el GIF de un gato triste
 void dibujarGatoTriste(){
-    //background(180); // Color de fondo gris claro    
     image(gatoTristeGif, 0, 0, width, height);
     mostrarMensaje("El gatito no está bebiendo agua.");
 }
 
+// Dibuja el GIF de una fuente encendida
 void dibujarFuenteEncendida(){
-  //background(180); // Color de fondo gris claro    
   image(encedidoGif, 0, 0, width, height);
   mostrarMensaje("La fuente de agua para gatos está encendida.");
 }
+
+// Dibuja el GIF de una fuente apagada
 void dibujarFuenteApagada(){
-  //background(180); // Color de fondo gris claro    
   image(apagadoGif, 0, 0, width, height);
   mostrarMensaje("La fuente de agua para gatos está apagada.");
 }
-// Método para mostrar un mensaje en el lienzo
+
+// Muestra un mensaje en el lienzo
 void mostrarMensaje(String mensaje) {
-  fill(205,205,205); // Color negro
-  textSize(20); // Tamaño del texto
+  fill(205,205,205); // Color del texto (blanco)
+  textSize(20);      // Tamaño del texto
   textAlign(CENTER, CENTER); // Alineación del texto
   text(mensaje, width/2, height - 50); // Muestra el mensaje centrado en la parte inferior del lienzo
-}
-
-void limpiarPantalla() {
-  //background(255);
 }
