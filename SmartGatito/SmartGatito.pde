@@ -10,7 +10,7 @@ void setup() {
   String portName = Serial.list()[1];
   myPort = new Serial(this, portName, 9600);
 
-  gatoFelizGif = new Gif(this, "resources/happy-cat.gif"); 
+  gatoFelizGif = new Gif(this, "resources/Chipi-chipi-chapa-chapa.gif"); 
   gatoTristeGif = new Gif(this, "resources/sad-cat.gif");
   encedidoGif = new Gif(this, "resources/cataratas.gif");
   apagadoGif = new Gif(this, "resources/desierto.gif");
@@ -24,7 +24,6 @@ void setup() {
 }
 
 void draw() {
-  limpiarPantalla();
   if (myPort.available() > 0 ) {
     //println("PUERTO NO DISPONIBLE");      
     val = myPort.readStringUntil('\n');         
@@ -65,13 +64,7 @@ void draw() {
 
 // Método para dibujar un gato feliz bebiendo agua
 void dibujarGatoFeliz() {
-  // Dibuja un fondo arcoiris
-  for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-      color c = color(map(x, 0, width, 0, 255), map(y, 0, height, 0, 255), 255);
-      set(x, y, c);
-    }
-  }
+  //background(180);
   //gatoFelizGif.play();
   image(gatoFelizGif, 0, 0, width, height);
   mostrarMensaje("El gatito está bebiendo agua.");
@@ -80,29 +73,29 @@ void dibujarGatoFeliz() {
 }
 
 void dibujarGatoTriste(){
-    background(180); // Color de fondo gris claro    
+    //background(180); // Color de fondo gris claro    
     image(gatoTristeGif, 0, 0, width, height);
     mostrarMensaje("El gatito no está bebiendo agua.");
 }
 
 void dibujarFuenteEncendida(){
-  background(180); // Color de fondo gris claro    
+  //background(180); // Color de fondo gris claro    
   image(encedidoGif, 0, 0, width, height);
   mostrarMensaje("La fuente de agua para gatos está encendida.");
 }
 void dibujarFuenteApagada(){
-  background(180); // Color de fondo gris claro    
+  //background(180); // Color de fondo gris claro    
   image(apagadoGif, 0, 0, width, height);
   mostrarMensaje("La fuente de agua para gatos está apagada.");
 }
 // Método para mostrar un mensaje en el lienzo
 void mostrarMensaje(String mensaje) {
-  fill(random(255),random(255),random(255)); // Color negro
+  fill(205,205,205); // Color negro
   textSize(20); // Tamaño del texto
   textAlign(CENTER, CENTER); // Alineación del texto
   text(mensaje, width/2, height - 50); // Muestra el mensaje centrado en la parte inferior del lienzo
 }
 
 void limpiarPantalla() {
-  background(255);
+  //background(255);
 }
