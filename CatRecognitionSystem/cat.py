@@ -1,7 +1,8 @@
 # OpenCV program to detect cat face in real time  
 # import libraries of python OpenCV  
 # where its functionality resides  
-import cv2  
+import cv2 
+from picamera2 import Picamera2
 # load the required trained XML classifiers  
 # https://github.com/Itseez/opencv/blob/master/  
 # data/haarcascades/haarcascade_frontalcatface.xml  
@@ -13,13 +14,14 @@ face_cascade = cv2.CascadeClassifier('haarcascade_frontalcatface.xml')
   
   
 # capture frames from a camera  
-cap = cv2.VideoCapture(0)  
-  
+cap = Picamera2()
+cap.start()
+
 # loop runs if capturing has been initialized.  
 while 1:  
   
     # reads frames from a camera  
-    ret, img = cap.read()  
+    img = cap.capture_array() 
   
     # convert to gray scale of each frames  
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  
@@ -34,18 +36,3 @@ while 1:
         roi_color = img[y:y+h, x:x+w]  
         if len(faces)==1:
             print("Gatito Detectado")
-  
-  
-    # Display an image in a window  
-    cv2.imshow('img',img)  
-  
-    # Wait for Esc key to stop  
-    k = cv2.waitKey(30) & 0xff
-    if k == 27:  
-        break
-  
-# Close the window  
-cap.release()  
-  
-# De-allocate any associated memory usage  
-cv2.destroyAllWindows()  
