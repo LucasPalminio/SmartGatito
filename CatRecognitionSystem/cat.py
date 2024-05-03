@@ -3,6 +3,8 @@
 # where its functionality resides  
 import cv2 
 from picamera2 import Picamera2
+import RPi.GPIO as GPIO    # Import Raspberry Pi GPIO library
+from time import sleep     # Import the sleep function from the time module
 # load the required trained XML classifiers  
 # https://github.com/Itseez/opencv/blob/master/  
 # data/haarcascades/haarcascade_frontalcatface.xml  
@@ -11,7 +13,9 @@ from picamera2 import Picamera2
 # from a lot of positive(faces) and negative(non-faces)  
 # images.  
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalcatface.xml')  
-  
+GPIO.setwarnings(False)    # Ignore warning for now
+GPIO.setmode(GPIO.BOARD)   # Use physical pin numbering
+GPIO.setup(8, GPIO.OUT, initial=GPIO.LOW)   # Set pin 8 to be an output pin and set initial value to low (off)
   
 # capture frames from a camera  
 cap = Picamera2()
@@ -34,5 +38,7 @@ while 1:
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,255,0),2)  
         roi_gray = gray[y:y+h, x:x+w]  
         roi_color = img[y:y+h, x:x+w]  
-        if len(faces)==1:
-            print("Gatito Detectado")
+        print("Gatito Detectado")
+        GPIO.output(8, GPIO.HIGH) # Turn on
+    if len(faces) == 0:
+        GPIO.output(8, GPIO.LOW)
