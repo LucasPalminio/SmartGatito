@@ -8,7 +8,8 @@ echoPin = 18  # Pin de eco del sensor ultrasónico (GPIO18)
 pinRele = 4   # Pin para controlar el relé (GPIO4)
 
 # Variables
-modo = 3  # Modo inicial
+modo = 2  # Modo inicial
+contador_agua = 0  # Contador de veces que el gato bebe agua
 
 def setup():
     GPIO.setmode(GPIO.BCM)  # Configuración de numeración de pines
@@ -17,6 +18,7 @@ def setup():
 
 def loop():
     global modo
+    global contador_agua
     # Ejecución del modo actual
     if modo == 1:
         # Modo siempre encendido
@@ -41,6 +43,7 @@ def loop():
         if cm < 30:
             print("Gatito Cerca")
             GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
+            contador_agua += 1  # Incrementar el contador de veces que el gato bebe agua
         else:
             print("Gatito Lejos")
             GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba
@@ -50,18 +53,21 @@ def loop():
         GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba
         print("Fuente Apagada")
 
-def check_mode():
-    global modo
-    # Consultar ThingsBoard para obtener el modo actual
-    url = 'http://thingsboard.cloud/api/v1/7mTCa4pj3NWSnJFZ9hlo/telemetry/mode'
+    # Enviar mensaje de telemetría a ThingsBoard
+    send_telemetry()
+
+def send_telemetry():
+    global contador_agua
+    # Enviar el contador de veces que el gato bebe agua a ThingsBoard
+    url = 'http://thingsboard.cloud/api/v1/7mTCa4pj3NWSnJFZ9hlo/telemetry'
+    payload = {'contador_agua': contador_agua}
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.post(url, json=payload, headers=headers)
         if response.status_code == 200:
-            modo = int(response.json()['modo'])
-            print("Modo actual:", modo)
+            print("Contador de agua enviado a ThingsBoard:", contador_agua)
         else:
-            print("Error al obtener el modo:", response.text)
+            print("Error al enviar el contador de agua a ThingsBoard:", response.text)
     except Exception as e:
         print("Error de conexión:", e)
 
@@ -73,8 +79,6 @@ if __name__ == '__main__':
         setup()
 
         while True:
-            check_mode()
             loop()
-            time.sleep(1)  # Esperar un segundo entre cada iteración
     except KeyboardInterrupt:
         GPIO.cleanup()
