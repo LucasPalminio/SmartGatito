@@ -1,38 +1,22 @@
 import RPi.GPIO as GPIO
 import time
 import requests
-import json
 
 # Definición de pines
 pingPin = 17  # Pin de disparo del sensor ultrasónico (GPIO17)
 echoPin = 18  # Pin de eco del sensor ultrasónico (GPIO18)
 pinRele = 4   # Pin para controlar el relé (GPIO4)
-button = 3    # Pin para el botón de cambio de modo (GPIO3)
 
 # Variables
-modo = 2  # Modo inicial
-
-# URL de la API de ThingsBoard
-url = 'http://thingsboard.cloud/api/v1/7mTCa4pj3NWSnJFZ9hlo/telemetry'
+modo = 3  # Modo inicial
 
 def setup():
     GPIO.setmode(GPIO.BCM)  # Configuración de numeración de pines
     GPIO.setup(pinRele, GPIO.OUT)  # Pin del relé como salida
-    GPIO.setup(button, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)  # Pin del botón como entrada
+    GPIO.setup(pingPin, GPIO.OUT)  # Pin del sensor de ultrasonido como salida
 
 def loop():
     global modo
-    # Lectura del estado del botón
-    estadoBoton = GPIO.input(button)
-
-    # Cambio de modo al presionar el botón
-    if estadoBoton == GPIO.HIGH:
-        modo += 1
-        if modo > 3:
-            modo = 1  # Reinicio del ciclo
-        print("Nuevo modo:", modo)
-        time.sleep(0.5)  # Retardo para evitar rebotes
-
     # Ejecución del modo actual
     if modo == 1:
         # Modo siempre encendido
@@ -40,7 +24,6 @@ def loop():
         print("Fuente Encendida")
     elif modo == 2:
         # Modo dependiendo de la medición del ultrasonido
-        GPIO.setup(pingPin, GPIO.OUT)  # Establecer pin de disparo como salida
         GPIO.output(pingPin, GPIO.LOW)  # Enviar pulso corto
         time.sleep(0.000002)
         GPIO.output(pingPin, GPIO.HIGH)  # Enviar pulso largo
@@ -67,46 +50,31 @@ def loop():
         GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba
         print("Fuente Apagada")
 
+def check_mode():
+    global modo
+    # Consultar ThingsBoard para obtener el modo actual
+    url = 'http://thingsboard.cloud/api/v1/7mTCa4pj3NWSnJFZ9hlo/telemetry/mode'
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+    try:
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            modo = int(response.json()['modo'])
+            print("Modo actual:", modo)
+        else:
+            print("Error al obtener el modo:", response.text)
+    except Exception as e:
+        print("Error de conexión:", e)
+
 def microsecondsToCentimeters(microseconds):
     return microseconds / 29 / 2
 
-# Función para enviar datos a ThingsBoard
-def send_to_thingsboard(data):
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(url, headers=headers, json=data)
-    print(response.status_code)
+if __name__ == '__main__':
+    try:
+        setup()
 
-# Función para recibir comandos de ThingsBoard
-def receive_from_thingsboard(data):
-    # Verificar si se recibió un comando de cambio de modo
-    if 'modo' in data:
-        mode = int(data['modo'])
-        handle_mode_change(mode)
-
-# Función para manejar el cambio de modo
-def handle_mode_change(mode):
-    global modo
-    modo = mode
-    print("Nuevo modo:", modo)
-
-# Modificar la función loop() para enviar datos a ThingsBoard
-def loop():
-    global modo
-    # Tu código existente aquí
-
-    # Agregar el envío de datos a ThingsBoard
-    data_to_send = {"modo": modo}
-    send_to_thingsboard(data_to_send)
-
-# Dentro del bucle principal, después de recibir comandos de ThingsBoard
-try:
-    setup()
-    while True:
-        loop()
-        # Agregar la función para recibir comandos de ThingsBoard
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            receive_from_thingsboard(data)
-except KeyboardInterrupt:
-    GPIO.cleanup()
+        while True:
+            check_mode()
+            loop()
+            time.sleep(1)  # Esperar un segundo entre cada iteración
+    except KeyboardInterrupt:
+        GPIO.cleanup()
