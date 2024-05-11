@@ -3,9 +3,9 @@ import time
 import requests
 
 # Definición de pines
-pingPin = 17  # Pin de disparo del sensor ultrasónico (GPIO17)
-echoPin = 18  # Pin de eco del sensor ultrasónico (GPIO18)
-pinRele = 4   # Pin para controlar el relé (GPIO4)
+trigPin = 24  # Pin trigger del sensor ultrasónico (GPIO18)
+echoPin = 23  # Pin echo del sensor ultrasónico (GPIO16)
+pinRele = 14   # Pin para controlar el relé (GPIO8)
 
 # Variables
 modo = 2  # Modo inicial
@@ -14,7 +14,10 @@ contador_agua = 0  # Contador de veces que el gato bebe agua
 def setup():
     GPIO.setmode(GPIO.BCM)  # Configuración de numeración de pines
     GPIO.setup(pinRele, GPIO.OUT)  # Pin del relé como salida
-    GPIO.setup(pingPin, GPIO.OUT)  # Pin del sensor de ultrasonido como salida
+    GPIO.setup(trigPin, GPIO.OUT)  # Pin del sensor de ultrasonido como salida
+    GPIO.setup(echoPin, GPIO.IN)  # Pin del sensor de ultrasonido como entrada
+    GPIO.output(trigPin, False)  # Inicializar el pin del sensor de ultrasonido en bajo
+    time.sleep(2)  # Esperar 2 segundos para estabilizar el sensor
 
 def loop():
     global modo
@@ -25,25 +28,23 @@ def loop():
         GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
         print("Fuente Encendida")
     elif modo == 2:
-        # Modo dependiendo de la medición del ultrasonido
-        GPIO.output(pingPin, GPIO.LOW)  # Enviar pulso corto
-        time.sleep(0.000002)
-        GPIO.output(pingPin, GPIO.HIGH)  # Enviar pulso largo
+        print("midiendo distancia")
+        GPIO.output(trigPin, True)
         time.sleep(0.00001)
-        GPIO.output(pingPin, GPIO.LOW)  # Detener pulso
-        GPIO.setup(echoPin, GPIO.IN)  # Establecer pin de eco como entrada
-        start_time = time.time()
-        stop_time = time.time()
-        while GPIO.input(echoPin) == 0:
-            start_time = time.time()
-        while GPIO.input(echoPin) == 1:
-            stop_time = time.time()
-        duration = stop_time - start_time
-        cm = microsecondsToCentimeters(duration * 1000000)  # Convertir a centímetros
+        GPIO.output(trigPin, False)
+        while GPIO.input(echoPin)==0:
+            pulse_start = time.time()
+        while GPIO.input(echoPin)==1:
+            pulse_end = time.time()
+        duration = pulse_end - pulse_start
+        cm = duration * 17150
+        cm =  round(cm, 2)
+        print("Distancia:", cm, "cm")
         if cm < 30:
             print("Gatito Cerca")
             GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
             contador_agua += 1  # Incrementar el contador de veces que el gato bebe agua
+            time.sleep(3)  # Tiempo que la bomba estará encendida (8 segundos
         else:
             print("Gatito Lejos")
             GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba
@@ -70,9 +71,6 @@ def send_telemetry():
             print("Error al enviar el contador de agua a ThingsBoard:", response.text)
     except Exception as e:
         print("Error de conexión:", e)
-
-def microsecondsToCentimeters(microseconds):
-    return microseconds / 29 / 2
 
 if __name__ == '__main__':
     try:
