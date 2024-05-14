@@ -3,6 +3,8 @@ import time
 import paho.mqtt.client as mqtt
 import threading
 import json
+import cv2 
+from picamera2 import Picamera2
 
 def on_connect(client, userdata, flags, rc): # Función que se ejecuta cuando se conecta al broker
     print("Connected with result code "+str(rc))
@@ -22,6 +24,9 @@ def on_message(client, userdata, msg): # Función que se ejecuta cuando se recib
 cm = 0  # Distancia en centímetros
 modo = 2  # Modo inicial
 agua = 0  # Contador de veces que el gato bebe agua
+face_cascade = cv2.CascadeClassifier('./CatRecognitionSystem/haarcascade_frontalcatface.xml')  
+cap = Picamera2()
+isGatito = False
 
 # Configuración MQTT
 broker_address = "mqtt.thingsboard.cloud"
@@ -67,14 +72,18 @@ def distanceMonitor(): # Función para medir distancia
 def modeSwitch(): # Función para cambiar modo de la fuente
     global modo
     global cm
+    global isGatito
     try:
         while True:
             print("Modo:", modo)
             if modo == 1:
                 GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
                 print("Fuente Encendida")
+                if isGatito & cm < 30:
+                    send_telemetry()
+                    time.sleep(3) # Tiempo que la bomba estará encendida (3 segundos)
             elif modo == 2:
-                if cm < 30:
+                if isGatito & cm < 30:
                     GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
                     send_telemetry()
                     time.sleep(3)  # Tiempo que la bomba estará encendida (3 segundos)
@@ -99,20 +108,44 @@ def send_telemetry(): # Función para enviar señal a ThingsBoard cada vez que e
     except Exception as e:
         print("Error de conexión:", e)
 
+def detectCat():
+    # capture frames from a camera  
+    global cap
+    global isGatito
+    cap.start()
+    while True:  
+        # reads frames from a camera  
+        img = cap.capture_array() 
+        # convert to gray scale of each frames  
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  
+        # Detects faces of different sizes in the input image  
+        faces = face_cascade.detectMultiScale(gray, 1.3, 5)  
+        if len(faces) > 1:  # Si len(faces) > 0 entonces se detectó un gato
+            print("Gatito Detectado")
+            isGatito = True
+        else:
+            print("Gatito no Detectado")
+            isGatito = False
+        time.sleep(1)
+            
+
 if __name__ == '__main__':
     # Definir hilos
     t1 = threading.Thread(target=distanceMonitor, name='Distance Monitor', daemon=True)
     t2 = threading.Thread(target=subscriber, name='Subscriber', daemon=True)
     t3 = threading.Thread(target=modeSwitch, name='Mode Switch', daemon=True)
+    t4 = threading.Thread(target=detectCat, name='Cat Detection', daemon=True)
     # Iniciar hilos
     t1.start()
     t2.start()
     t3.start()
+    t4.start()
     try:
         # Esperar a que los hilos terminen
         t1.join()
         t2.join()
         t3.join()
+        t4.join()
     except KeyboardInterrupt:
         GPIO.cleanup()
 
