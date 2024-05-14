@@ -83,9 +83,10 @@ def modeSwitch(): # Función para cambiar modo de la fuente
                     send_telemetry()
                     time.sleep(3) # Tiempo que la bomba estará encendida (3 segundos)
             elif modo == 2:
-                if isGatito & cm < 30:
+                if cm < 30:
                     GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
-                    send_telemetry()
+                    if isGatito:
+                        send_telemetry()
                     time.sleep(3)  # Tiempo que la bomba estará encendida (3 segundos)
                 else:
                     GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba    
