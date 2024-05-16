@@ -17,7 +17,7 @@ def on_message(client, userdata, msg): # Función que se ejecuta cuando se recib
             modo = 1
         else:
             modo = int(modo)+1
-
+        send_telemetry("modo", modo)
 # Variables
 cm = 0  # Distancia en centímetros
 modo = 2  # Modo inicial
@@ -69,14 +69,17 @@ def modeSwitch(): # Función para cambiar modo de la fuente
     global cm
     try:
         while True:
-            print("Modo:", modo)
+            #print("Modo:", modo)
             if modo == 1:
                 GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
                 print("Fuente Encendida")
+                if cm < 30:
+                    send_telemetry("agua", 1)
+                    time.sleep(3)  # Tiempo que la bomba estará encendida (3 segundos)
             elif modo == 2:
                 if cm < 30:
                     GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
-                    send_telemetry()
+                    send_telemetry("agua", 1)
                     time.sleep(3)  # Tiempo que la bomba estará encendida (3 segundos)
                 else:
                     GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba    
@@ -92,10 +95,13 @@ def subscriber(): # Función para suscribirse al topic
     client.loop_forever()
     
 
-def send_telemetry(): # Función para enviar señal a ThingsBoard cada vez que el gato bebe agua
+def send_telemetry(mode, value): # Función para enviar señal a ThingsBoard
     try:
         #print("Enviando telemetría")
-        client.publish("v1/devices/me/telemetry", "{agua:1}")
+        if mode == "agua":
+            client.publish("v1/devices/me/telemetry", "{agua:"+str(value)+"}")
+        if mode == "modo":
+            client.publish("v1/devices/me/telemetry", "{modo:"+str(value)+"}")
     except Exception as e:
         print("Error de conexión:", e)
 
