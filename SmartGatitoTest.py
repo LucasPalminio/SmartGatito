@@ -3,6 +3,18 @@ import time
 import paho.mqtt.client as mqtt
 import threading
 import json
+def read_credentials():
+    with open('credentials.json') as file:
+        credentials = json.load(file)
+    return credentials
+
+credentials = read_credentials()
+clientId = credentials['clientId']
+username = credentials['username']
+password = credentials['password']
+broker_address = credentials["broker"]["host"]
+port = credentials["broker"]["port"]
+
 
 def on_connect(client, userdata, flags, rc): # Función que se ejecuta cuando se conecta al broker
     print("Connected with result code "+str(rc))
@@ -24,10 +36,9 @@ modo = 2  # Modo inicial
 agua = 0  # Contador de veces que el gato bebe agua
 
 # Configuración MQTT
-broker_address = "mqtt.thingsboard.cloud"
-port = 1883 
-client = mqtt.Client("30vte5orp3pywd6get3n")  # Crear nuevo objeto de instancia
-client.username_pw_set("emzn7leosagnh376l84e", "ouokpwl7dyfo0xdv1pwn")  # Configurar usuario y contraseña
+
+client = mqtt.Client(clientId)  # Crear nuevo objeto de instancia
+client.username_pw_set(username, password)  # Configurar usuario y contraseña
 client.on_connect = on_connect
 client.on_message = on_message
 client.connect(broker_address, port)  # Conectar al broker
