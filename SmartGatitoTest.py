@@ -3,37 +3,40 @@ import time
 import paho.mqtt.client as mqtt
 import threading
 import json
+import requests
+
 def read_credentials():
     with open('credentials.json') as file:
         credentials = json.load(file)
     return credentials
 
 credentials = read_credentials()
-clientId = credentials['clientId']
-username = credentials['username']
-password = credentials['password']
+clientId = credentials["broker"]['clientId']
+username = credentials["broker"]['username']
+password = credentials["broker"]['password']
 broker_address = credentials["broker"]["host"]
 port = credentials["broker"]["port"]
 
 
 def on_connect(client, userdata, flags, rc): # Función que se ejecuta cuando se conecta al broker
     print("Connected with result code "+str(rc))
-    client.subscribe("v1/devices/me/rpc/request/+")
+    client.subscribe("v1/devices/me/attributes")
+
 
 def on_message(client, userdata, msg): # Función que se ejecuta cuando se recibe un mensaje
+    global t3
+    global exit
     print(msg.topic+" "+str(msg.payload))
     global modo
     data = json.loads(msg.payload)
-    if data["method"] == "setMode":
-        if modo==3:
-            modo = 1
-        else:
-            modo = int(modo)+1
+    if "modo" in data:
+        modo = int(data["modo"])
 
 # Variables
 cm = 0  # Distancia en centímetros
 modo = 2  # Modo inicial
 agua = 0  # Contador de veces que el gato bebe agua
+token = ""
 
 # Configuración MQTT
 
@@ -88,7 +91,7 @@ def modeSwitch(): # Función para cambiar modo de la fuente
                 if cm < 30:
                     GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
                     send_telemetry()
-                    time.sleep(3)  # Tiempo que la bomba estará encendida (3 segundos)
+                    time.sleep(15)
                 else:
                     GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba    
             elif modo == 3:
@@ -105,12 +108,25 @@ def subscriber(): # Función para suscribirse al topic
 
 def send_telemetry(): # Función para enviar señal a ThingsBoard cada vez que el gato bebe agua
     try:
-        #print("Enviando telemetría")
-        client.publish("v1/devices/me/telemetry", "{agua:1}")
+        print("Enviando telemetría")
+        url = "http://iot.ceisufro.cl:8080/api/plugins/telemetry/DEVICE/"+credentials["API"]["deviceId"]+"/SHARED_SCOPE"
+        headers = {'Content-Type': 'application/json', 'X-Authorization': 'Bearer ' + token, 'connection':'keep-alive'}
+        data = {'agua': 1}
+        response = requests.post(url, json=data, headers=headers)
+        print(response.status_code)
     except Exception as e:
         print("Error de conexión:", e)
 
+def getToken():
+    global token
+    url = "http://iot.ceisufro.cl:8080/api/auth/login"
+    headers = {'Content-Type': 'application/json'}
+    data = {'username': credentials["API"]["username"], 'password': credentials["API"]["password"]}
+    response = requests.post(url, json=data, headers=headers)
+    token = response.json()["token"]
+
 if __name__ == '__main__':
+    getToken()
     # Definir hilos
     t1 = threading.Thread(target=distanceMonitor, name='Distance Monitor', daemon=True)
     t2 = threading.Thread(target=subscriber, name='Subscriber', daemon=True)
