@@ -5,17 +5,15 @@ import threading
 import json
 import requests
 
-def read_credentials():
-    with open('credentials.json') as file:
-        credentials = json.load(file)
-    return credentials
 
-credentials = read_credentials()
-clientId = credentials["broker"]['clientId']
-username = credentials["broker"]['username']
-password = credentials["broker"]['password']
-broker_address = credentials["broker"]["host"]
-port = credentials["broker"]["port"]
+with open('secrets.json') as file:
+        secrets = json.load(file)
+
+clientId = secrets["broker"]['clientId']
+username = secrets["broker"]['username']
+password = secrets["broker"]['password']
+broker_address = secrets["broker"]["host"]
+port = secrets["broker"]["port"]
 
 
 def on_connect(client, userdata, flags, rc): # Función que se ejecuta cuando se conecta al broker
@@ -109,7 +107,7 @@ def subscriber(): # Función para suscribirse al topic
 def send_telemetry(): # Función para enviar señal a ThingsBoard cada vez que el gato bebe agua
     try:
         print("Enviando telemetría")
-        url = "http://iot.ceisufro.cl:8080/api/plugins/telemetry/DEVICE/"+credentials["API"]["deviceId"]+"/SHARED_SCOPE"
+        url = "http://iot.ceisufro.cl:8080/api/plugins/telemetry/DEVICE/"+secrets["API"]["deviceId"]+"/SHARED_SCOPE"
         headers = {'Content-Type': 'application/json', 'X-Authorization': 'Bearer ' + token, 'connection':'keep-alive'}
         data = {'agua': 1}
         response = requests.post(url, json=data, headers=headers)
@@ -121,7 +119,7 @@ def getToken():
     global token
     url = "http://iot.ceisufro.cl:8080/api/auth/login"
     headers = {'Content-Type': 'application/json'}
-    data = {'username': credentials["API"]["username"], 'password': credentials["API"]["password"]}
+    data = {'username': secrets["API"]["username"], 'password': secrets["API"]["password"]}
     response = requests.post(url, json=data, headers=headers)
     token = response.json()["token"]
 
