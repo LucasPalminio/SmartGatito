@@ -18,8 +18,7 @@ port = secrets["broker"]["port"]
 
 def on_connect(client, userdata, flags, rc): # Función que se ejecuta cuando se conecta al broker
     print("Connected with result code "+str(rc))
-    client.subscribe("v1/devices/me/attributes")
-
+    client.subscribe("v1/devices/me/attributes",2)
 
 def on_message(client, userdata, msg): # Función que se ejecuta cuando se recibe un mensaje
     global t3
@@ -89,7 +88,7 @@ def modeSwitch(): # Función para cambiar modo de la fuente
                 if cm < 30:
                     GPIO.output(pinRele, GPIO.LOW)  # Encender la bomba
                     send_telemetry()
-                    time.sleep(15)
+                    time.sleep(2)
                 else:
                     GPIO.output(pinRele, GPIO.HIGH)  # Apagar la bomba    
             elif modo == 3:
@@ -108,9 +107,15 @@ def send_telemetry(): # Función para enviar señal a ThingsBoard cada vez que e
     try:
         print("Enviando telemetría")
         url = "http://iot.ceisufro.cl:8080/api/plugins/telemetry/DEVICE/"+secrets["API"]["deviceId"]+"/SHARED_SCOPE"
-        headers = {'Content-Type': 'application/json', 'X-Authorization': 'Bearer ' + token, 'connection':'keep-alive'}
-        data = {'agua': 1}
-        response = requests.post(url, json=data, headers=headers)
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Authorization': 'Bearer ' + token,
+            'Connection':'keep-alive',
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate, br'
+            }
+        data = '{"agua": 1}'
+        response = requests.post(url, data, headers=headers)
         print(response.status_code)
     except Exception as e:
         print("Error de conexión:", e)
