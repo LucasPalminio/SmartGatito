@@ -6,6 +6,7 @@ import json
 import requests
 import cv2 
 from picamera2 import Picamera2
+from flask import Flask, Response
 
 
 with open('secrets.json') as file:
@@ -40,6 +41,7 @@ face_cascade = cv2.CascadeClassifier('./CatRecognitionSystem/haarcascade_frontal
 cap = Picamera2()
 isGatito = False
 detectado = False
+app = Flask(__name__)
 # Configuración MQTT
 
 client = mqtt.Client(clientId)  # Crear nuevo objeto de instancia
@@ -139,26 +141,46 @@ def getToken():
     response = requests.post(url, json=data, headers=headers)
     token = response.json()["token"]
 
-def detectCat():
+def detectCat(img):
     # capture frames from a camera  
     global cap
     global isGatito
-    cap.start()
-    while True:  
-        # reads frames from a camera  
-        img = cap.capture_array() 
-        # convert to gray scale of each frames  
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  
-        # Detects faces of different sizes in the input image  
-        faces = face_cascade.detectMultiScale(gray, 1.3, 5)  
-        if len(faces) > 1:  # Si len(faces) > 0 entonces se detectó un gato
-            print("Gatito Detectado")
-            isGatito = True
-        else:
-            print("Gatito no Detectado")
-            isGatito = False
-        time.sleep(1)
+    # reads frames from a camera  
+    img = cap.capture_array() 
+    # convert to gray scale of each frames  
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)  
+    # Detects faces of different sizes in the input image  
+    faces = face_cascade.detectMultiScale(gray, 1.3, 5)  
+    if len(faces) > 1:  # Si len(faces) > 0 entonces se detectó un gato
+        print("Gatito Detectado")
+        isGatito = True
+    else:
+        print("Gatito no Detectado")
+        isGatito = False
+    time.sleep(1)
 
+def generate_frames():
+    global cap
+    global isGatito
+    preview_config = cap.create_preview_configuration(main={"size": (640, 480)})
+    cap.configure(preview_config)
+    cap.start()
+    #cap = cv2.VideoCapture(0)  # Use your camera setup
+    while True:
+        frame = cap.capture_array()
+        detectCat(frame)
+        ret, buffer = cv2.imencode('.jpg', frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route('/video')
+def video():
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+def run_app():
+    app.run(debug=False, host='0.0.0.0', threaded=True)
+    
 if __name__ == '__main__':
     getToken()
     # Definir hilos
@@ -166,7 +188,7 @@ if __name__ == '__main__':
     t1 = threading.Thread(target=distanceMonitor, name='Distance Monitor', daemon=True)
     t2 = threading.Thread(target=subscriber, name='Subscriber', daemon=True)
     t3 = threading.Thread(target=modeSwitch, name='Mode Switch', daemon=True)
-    t4 = threading.Thread(target=detectCat, name='Cat Detection', daemon=True)
+    t4 = threading.Thread(target=run_app, name='Cat Detection', daemon=True)
     # Iniciar hilos
     t1.start()
     t2.start()
