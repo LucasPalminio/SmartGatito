@@ -160,6 +160,7 @@ def generate_frames(output_queue):
                 # Draw rectangles around detected faces
                 for (x, y, w, h) in faces:
                     cv2.rectangle(img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+                img = cv2.flip(img, 0) # Flip image vertically
                 # Calculate framerate
                 time_diff = current_time - last_time
                 if time_diff > 0:  # Prevent division by zero
